@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"io"
 	"slices"
 
@@ -12,12 +13,13 @@ import (
 	"google.golang.org/grpc/status"
 
 	grpcModels "github.com/GintGld/fizteh-radio-storage/internal/domain/grpc"
+	"github.com/GintGld/fizteh-radio-storage/internal/service"
 )
 
 type Storage interface {
 	Upload(ctx context.Context, w io.Reader) (int, error)
-	Download(ctx context.Context, id int32, w io.Writer) error
-	Delete(ctx context.Context, fileId int32) error
+	Download(ctx context.Context, id int, w io.Writer) error
+	Delete(ctx context.Context, fileId int) error
 }
 
 type serverAPI struct {
@@ -73,8 +75,10 @@ func (s *serverAPI) Download(
 
 	downloadStream := &grpcModels.DownloadStreamWrapper{Stream: stream}
 
-	if err := s.storage.Download(ctx, req.GetFileId(), downloadStream); err != nil {
-		// TODO handle unknown id
+	if err := s.storage.Download(ctx, int(req.GetFileId()), downloadStream); err != nil {
+		if errors.Is(err, service.ErrFileNotExist) {
+			return status.Error(codes.NotFound, "file not exists")
+		}
 		return status.Error(codes.Internal, "internal server error")
 	}
 
@@ -90,8 +94,10 @@ func (s *serverAPI) Delete(
 		return nil, status.Error(codes.PermissionDenied, "ip is not allowed")
 	}
 
-	if err := s.storage.Delete(ctx, req.GetFileId()); err != nil {
-		// TODO handle unknown file id
+	if err := s.storage.Delete(ctx, int(req.GetFileId())); err != nil {
+		if errors.Is(err, service.ErrFileNotExist) {
+			return nil, status.Error(codes.NotFound, "file not exists")
+		}
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 

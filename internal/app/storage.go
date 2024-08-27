@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 
 	storageGRPC "github.com/GintGld/fizteh-radio-storage/internal/grpc"
-	storage "github.com/GintGld/fizteh-radio-storage/internal/services/storage"
+	storage "github.com/GintGld/fizteh-radio-storage/internal/service/storage"
 )
 
 type App struct {
@@ -20,18 +20,24 @@ type App struct {
 func New(
 	log *slog.Logger,
 	port int,
-	alloewIPs []string,
+	allowedIPs []string,
+	storageDir string,
+	nestingDepth int,
+	idLength int,
 ) *App {
 	gRPCServer := grpc.NewServer()
 
 	storageSrv := storage.New(
 		log,
+		storageDir,
+		nestingDepth,
+		idLength,
 	)
 
 	storageGRPC.Register(
 		gRPCServer,
 		storageSrv,
-		alloewIPs,
+		allowedIPs,
 	)
 
 	return &App{

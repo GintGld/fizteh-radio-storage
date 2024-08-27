@@ -29,6 +29,9 @@ func main() {
 		log,
 		cfg.GRPC.Port,
 		cfg.GRPC.AllowedIPs,
+		cfg.Source.SourcePath,
+		cfg.Source.NestingDepth,
+		cfg.Source.IdLength,
 	)
 
 	// Start app
