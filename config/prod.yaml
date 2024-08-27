@@ -1,0 +1,10 @@
+env: prod
+
+grpc:
+  port: 8082
+  timeout: 30s
+
+source_storage:
+  path: ./source
+  nesting_depth: 5
+  id_length: 8
