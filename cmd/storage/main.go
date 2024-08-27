@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/GintGld/fizteh-radio-storage/internal/app"
@@ -28,7 +29,7 @@ func main() {
 	application := app.New(
 		log,
 		cfg.GRPC.Port,
-		cfg.GRPC.AllowedIPs,
+		getAllowedIPs(),
 		cfg.Source.SourcePath,
 		cfg.Source.NestingDepth,
 		cfg.Source.IdLength,
@@ -88,4 +89,20 @@ func setupPrettySlog() *slog.Logger {
 	handler := opts.NewPrettyHandler(os.Stdout)
 
 	return slog.New(handler)
+}
+
+func getAllowedIPs() []string {
+	str := os.Getenv("ALLOWED_IPS")
+
+	if str == "" {
+		panic("secret not specified")
+	}
+
+	allowedIPs := strings.FieldsFunc(str, func(r rune) bool { return r == ':' })
+
+	if len(allowedIPs) == 0 {
+		panic("slice if allowed ips is empty")
+	}
+
+	return allowedIPs
 }

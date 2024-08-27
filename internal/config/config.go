@@ -16,9 +16,8 @@ type Config struct {
 }
 
 type GRPCConfig struct {
-	Port       int           `yaml:"port" env-default:"8888"`
-	AllowedIPs []string      `yaml:"allowed_ips" env-required:"true"`
-	Timeout    time.Duration `yaml:"timeout" env-default:"1m"`
+	Port    int           `yaml:"port" env-default:"8888"`
+	Timeout time.Duration `yaml:"timeout" env-default:"1m"`
 }
 
 type SourceStorage struct {
