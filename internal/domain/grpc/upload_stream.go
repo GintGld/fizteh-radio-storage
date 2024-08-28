@@ -25,7 +25,7 @@ func (w *UploadStreamWrapper) Read(p []byte) (int, error) {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	p = req.Chunk
+	p = req.GetChunk()
 
 	return len(p), nil
 }
