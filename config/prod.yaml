@@ -1,4 +1,5 @@
 env: prod
+log_path: /storage/.log/storage.log
 
 grpc:
   port: 8082

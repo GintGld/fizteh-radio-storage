@@ -11,8 +11,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GintGld/fizteh-radio-storage/internal/lib/logger/sl"
-	"github.com/GintGld/fizteh-radio-storage/internal/service"
+	grpcModels "radio-storage/internal/domain/grpc"
+	"radio-storage/internal/lib/logger/sl"
+	"radio-storage/internal/service"
+)
+
+const (
+	bufferLen = 1024 * 32
 )
 
 type Storage struct {
@@ -50,7 +55,7 @@ func New(
 
 // Upload writes content from io.Reader to generated file,
 // returns its id.
-func (s *Storage) Upload(ctx context.Context, r io.Reader) (int, error) {
+func (s *Storage) Upload(ctx context.Context, r *grpcModels.UploadStreamWrapper) (int, error) {
 	const op = "Storage.Upload"
 
 	log := s.log.With(
@@ -79,16 +84,29 @@ func (s *Storage) Upload(ctx context.Context, r io.Reader) (int, error) {
 	}
 	defer file.Close()
 
-	if _, err := io.Copy(file, r); err != nil {
-		log.Error("failed to copy data to file", slog.String("file", filename), sl.Err(err))
-		return 0, fmt.Errorf("%s: %w", op, err)
+	// Load data
+	for {
+		chunk, err := r.GetChunk()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return 0, fmt.Errorf("%s: %w", op, err)
+		}
+
+		if _, err := file.Write(chunk); err != nil {
+			log.Error("failed to write chunk", sl.Err(err))
+			return 0, fmt.Errorf("%s: %w", op, err)
+		}
 	}
+
+	log.Debug("uploaded file", slog.Int("id", id))
 
 	return id, nil
 }
 
 // Download writes file to io.Writer.
-func (s *Storage) Download(ctx context.Context, id int, w io.Writer) error {
+func (s *Storage) Download(ctx context.Context, id int, w *grpcModels.DownloadStreamWrapper) error {
 	const op = "Storage.Download"
 
 	log := s.log.With(
@@ -115,6 +133,8 @@ func (s *Storage) Download(ctx context.Context, id int, w io.Writer) error {
 	}
 	filename := dir + "/" + strconv.Itoa(id) + ".mp3"
 
+	log.Debug("download file", slog.Int("id", id))
+
 	// Open file to read.
 	file, err := os.Open(filename)
 	if err != nil {
@@ -124,10 +144,22 @@ func (s *Storage) Download(ctx context.Context, id int, w io.Writer) error {
 	defer file.Close()
 
 	// Copy data.
-	if _, err := io.Copy(w, file); err != nil {
-		log.Error("failed to send file", slog.String("file", filename), sl.Err(err))
-		return fmt.Errorf("%s: %w", op, err)
+	buffer := make([]byte, bufferLen)
+	for {
+		p, err := file.Read(buffer)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return fmt.Errorf("%s: %w", op, err)
+		}
+		fmt.Println(buffer[:p])
+		if err := w.Write(buffer[:p]); err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
 	}
+
+	log.Debug("downloaded file", slog.Int("id", id))
 
 	return nil
 }
@@ -154,6 +186,8 @@ func (s *Storage) Delete(ctx context.Context, id int) error {
 		return service.ErrFileNotExist
 	}
 
+	log.Debug("deleting file")
+
 	// Construct path to the file.
 	dir, err := s.getCorrespondingDir(id)
 	if err != nil {
@@ -168,10 +202,12 @@ func (s *Storage) Delete(ctx context.Context, id int) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	log.Debug("deleted file")
+
 	return nil
 }
 
-// initFileSystem inits file system.
+// mustinitFileSystem inits file system.
 // Creates necessary directories.
 //
 // Panics if occurs error.

@@ -3,8 +3,9 @@ package server
 import (
 	"context"
 	"errors"
-	"io"
+	"fmt"
 	"slices"
+	"strings"
 
 	ssov1 "github.com/GintGld/fizteh-radio-proto/gen/go/storage"
 	"google.golang.org/grpc"
@@ -12,13 +13,13 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
-	grpcModels "github.com/GintGld/fizteh-radio-storage/internal/domain/grpc"
-	"github.com/GintGld/fizteh-radio-storage/internal/service"
+	grpcModels "radio-storage/internal/domain/grpc"
+	"radio-storage/internal/service"
 )
 
 type Storage interface {
-	Upload(ctx context.Context, w io.Reader) (int, error)
-	Download(ctx context.Context, id int, w io.Writer) error
+	Upload(ctx context.Context, w *grpcModels.UploadStreamWrapper) (int, error)
+	Download(ctx context.Context, id int, w *grpcModels.DownloadStreamWrapper) error
 	Delete(ctx context.Context, fileId int) error
 }
 
@@ -45,7 +46,9 @@ func (s *serverAPI) Upload(
 ) error {
 	ctx := stream.Context()
 	p, _ := peer.FromContext(ctx)
-	if !slices.Contains(s.allowedIps, p.Addr.String()) {
+	ip := strings.FieldsFunc(p.Addr.String(), func(r rune) bool { return r == ':' })[0]
+	if !slices.Contains(s.allowedIps, ip) {
+		fmt.Println(s.allowedIps, ip)
 		return status.Error(codes.PermissionDenied, "ip is not allowed")
 	}
 
@@ -69,13 +72,16 @@ func (s *serverAPI) Download(
 ) error {
 	ctx := stream.Context()
 	p, _ := peer.FromContext(ctx)
-	if !slices.Contains(s.allowedIps, p.Addr.String()) {
+	ip := strings.FieldsFunc(p.Addr.String(), func(r rune) bool { return r == ':' })[0]
+	if !slices.Contains(s.allowedIps, ip) {
+		fmt.Println(s.allowedIps, ip)
 		return status.Error(codes.PermissionDenied, "ip is not allowed")
 	}
 
 	downloadStream := &grpcModels.DownloadStreamWrapper{Stream: stream}
 
 	if err := s.storage.Download(ctx, int(req.GetFileId()), downloadStream); err != nil {
+		fmt.Println(err)
 		if errors.Is(err, service.ErrFileNotExist) {
 			return status.Error(codes.NotFound, "file not exists")
 		}
@@ -90,7 +96,9 @@ func (s *serverAPI) Delete(
 	req *ssov1.DeleteRequest,
 ) (*ssov1.DeleteResponse, error) {
 	p, _ := peer.FromContext(ctx)
-	if !slices.Contains(s.allowedIps, p.Addr.String()) {
+	ip := strings.FieldsFunc(p.Addr.String(), func(r rune) bool { return r == ':' })[0]
+	if !slices.Contains(s.allowedIps, ip) {
+		fmt.Println(s.allowedIps, ip)
 		return nil, status.Error(codes.PermissionDenied, "ip is not allowed")
 	}
 

@@ -9,23 +9,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-// UploadStreamWrapper is wrapper for io.Reader interface
 type UploadStreamWrapper struct {
 	Stream grpc.ClientStreamingServer[ssov1.UploadRequest, ssov1.UploadResponse]
 }
 
-func (w *UploadStreamWrapper) Read(p []byte) (int, error) {
+func (w *UploadStreamWrapper) GetChunk() ([]byte, error) {
 	const op = "UploadStreamWrapper.GetChunk"
 
 	req, err := w.Stream.Recv()
 	if err != nil {
 		if errors.Is(err, io.EOF) {
-			return 0, io.EOF
+			return nil, io.EOF
 		}
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	p = req.GetChunk()
-
-	return len(p), nil
+	return req.GetChunk(), nil
 }

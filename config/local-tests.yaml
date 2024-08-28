@@ -1,0 +1,10 @@
+env: local
+
+grpc:
+  port: 8000
+  timeout: 10h
+
+source_storage:
+  path: ./tmp
+  nesting_depth: 2
+  id_length: 5

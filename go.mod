@@ -1,4 +1,4 @@
-module github.com/GintGld/fizteh-radio-storage
+module radio-storage
 
 go 1.21.6
 

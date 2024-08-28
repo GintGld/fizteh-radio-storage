@@ -7,8 +7,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	storageGRPC "github.com/GintGld/fizteh-radio-storage/internal/grpc"
-	storage "github.com/GintGld/fizteh-radio-storage/internal/service/storage"
+	storageGRPC "radio-storage/internal/grpc"
+	storage "radio-storage/internal/service/storage"
 )
 
 type App struct {

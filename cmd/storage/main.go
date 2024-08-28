@@ -8,9 +8,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/GintGld/fizteh-radio-storage/internal/app"
-	"github.com/GintGld/fizteh-radio-storage/internal/config"
-	"github.com/GintGld/fizteh-radio-storage/internal/lib/logger/slogpretty"
+	"radio-storage/internal/app"
+	"radio-storage/internal/config"
+	"radio-storage/internal/lib/logger/slogpretty"
 )
 
 const (
