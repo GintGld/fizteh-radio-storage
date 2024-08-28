@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"slices"
 	"strings"
 
@@ -48,7 +47,6 @@ func (s *serverAPI) Upload(
 	p, _ := peer.FromContext(ctx)
 	ip := strings.FieldsFunc(p.Addr.String(), func(r rune) bool { return r == ':' })[0]
 	if !slices.Contains(s.allowedIps, ip) {
-		fmt.Println(s.allowedIps, ip)
 		return status.Error(codes.PermissionDenied, "ip is not allowed")
 	}
 
@@ -74,14 +72,12 @@ func (s *serverAPI) Download(
 	p, _ := peer.FromContext(ctx)
 	ip := strings.FieldsFunc(p.Addr.String(), func(r rune) bool { return r == ':' })[0]
 	if !slices.Contains(s.allowedIps, ip) {
-		fmt.Println(s.allowedIps, ip)
 		return status.Error(codes.PermissionDenied, "ip is not allowed")
 	}
 
 	downloadStream := &grpcModels.DownloadStreamWrapper{Stream: stream}
 
 	if err := s.storage.Download(ctx, int(req.GetFileId()), downloadStream); err != nil {
-		fmt.Println(err)
 		if errors.Is(err, service.ErrFileNotExist) {
 			return status.Error(codes.NotFound, "file not exists")
 		}
@@ -98,7 +94,6 @@ func (s *serverAPI) Delete(
 	p, _ := peer.FromContext(ctx)
 	ip := strings.FieldsFunc(p.Addr.String(), func(r rune) bool { return r == ':' })[0]
 	if !slices.Contains(s.allowedIps, ip) {
-		fmt.Println(s.allowedIps, ip)
 		return nil, status.Error(codes.PermissionDenied, "ip is not allowed")
 	}
 

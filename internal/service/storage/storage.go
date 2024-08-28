@@ -153,7 +153,6 @@ func (s *Storage) Download(ctx context.Context, id int, w *grpcModels.DownloadSt
 			}
 			return fmt.Errorf("%s: %w", op, err)
 		}
-		fmt.Println(buffer[:p])
 		if err := w.Write(buffer[:p]); err != nil {
 			return fmt.Errorf("%s: %w", op, err)
 		}
