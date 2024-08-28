@@ -1,0 +1,51 @@
+name: Deploy App
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to deploy'
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HOST: fizteh-radio@93.175.6.65
+      PORT: 5010
+      DEPLOY_DIR: /home/fizteh-radio/online-radio/storage
+      CONFIG_PATH: /home/fizteh-radio/online-radio/storage/prod.yaml
+      ENV_FILE_PATH: /home/fizteh-radio/online-radio/storage/.env
+      COMPOSE_ENV: /home/fizteh-radio/online-radio/storage/compose.env
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup ssh
+        run: |
+          echo "$DEPLOY_SSH_KEY" > deploy_key.pem
+          sudo chmod 600 deploy_key.pem
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      - name: Setup environment
+        run: |
+          ssh -i deploy_key.pem -o StrictHostKeyChecking=no -p ${{ env.PORT }} ${{ env.HOST }} \
+          "mkdir -p ${{ env.DEPLOY_DIR }}/.nginx ${{ env.DEPLOY_DIR }}/config && \
+          sudo rm -f ${{ env.ENV_FILE_PATH }} ${{ env.COMPOSE_ENV }} && \
+          echo "CONFIG_PATH=/storage/config/prod.yaml" >> ${{ env.ENV_FILE_PATH }} && \
+          echo "ALLOWED_IPS=${{ secrets.ALLOWED_IPS }}" >> ${{ env.ENV_FILE_PATH }} && \
+          echo "SOURCE_STORAGE=/mnt/base/radio-source" >> ${{ env.COMPOSE_ENV }}"
+      - name: Send config files
+        run: |
+          scp -r -i deploy_key.pem -o StrictHostKeyChecking=no -P ${{ env.PORT }} \
+            compose.yaml \
+            ${{ env.HOST }}:${{ env.DEPLOY_DIR }} && \
+          scp -r -i deploy_key.pem -o StrictHostKeyChecking=no -P ${{ env.PORT }} \
+            config/prod.yaml \
+            ${{ env.HOST }}:${{ env.DEPLOY_DIR }}/config/prod.yaml
+      - name: Deploy to server
+        run: |
+          ssh -i deploy_key.pem -o StrictHostKeyChecking=no -p ${{ env.PORT }} ${{ env.HOST }} \
+          'cd ${{ env.DEPLOY_DIR }} && \
+          sudo docker compose --env-file ${{ env.COMPOSE_ENV }} stop && \
+          sudo docker image rm -f gingld/fizteh-radio-storage && \
+          sudo docker compose --env-file ${{ env.COMPOSE_ENV }} up -d'
