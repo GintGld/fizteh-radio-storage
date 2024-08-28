@@ -241,14 +241,14 @@ func (s *Storage) getCorrespondingDir(id int) (string, error) {
 
 	if id < 0 {
 		log.Warn("invalid media source id", slog.Int("id", id))
-		return "", fmt.Errorf("%s: invalid media source id", op)
+		return "", fmt.Errorf("%s: invalid media storage id", op)
 	}
 
 	str := strconv.Itoa(int(id))
 
 	if len(str) > s.idLength {
 		log.Warn("invalid media source id", slog.Int("id", id))
-		return "", fmt.Errorf("%s: invalid media source id", op)
+		return "", fmt.Errorf("%s: invalid media storage id", op)
 	}
 
 	splitted := make([]string, s.nestingDepth)
