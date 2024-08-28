@@ -1,3 +1,5 @@
 config/local.yaml
 Taskfile.yaml
 .env
+go.work
+go.work.sum
