@@ -1,0 +1,13 @@
+services:
+  storage:
+    image: gingld/fizteh-radio-storage:latest
+    container_name: radio-storage
+    restart: always
+    ports:
+      - 8082:8082
+    volumes:
+      - ./config/prod.yaml:/storage/config/prod.yaml:ro
+      - /$SOURCE_STORAGE:/storage/source:rw
+      - ./.log/storage:/storage/.log
+    env_file:
+      - .env
