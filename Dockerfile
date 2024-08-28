@@ -18,7 +18,6 @@ RUN --mount=type=cache,target=/var/cache/apk \
     apk --update add \
         ca-certificates \
         tzdata \
-        ffmpeg \
         && \
         update-ca-certificates
 
@@ -28,4 +27,4 @@ COPY --from=builder /build/storage /storage/storage
 
 EXPOSE 8082
 
-ENTRYPOINT [ "sh", "./storage/storage" ]
+ENTRYPOINT [ "/storage/storage" ]
