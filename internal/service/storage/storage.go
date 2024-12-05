@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	bufferLen = 1024 * 32
+	bufferLen = 1024 * 16
 )
 
 type Storage struct {
