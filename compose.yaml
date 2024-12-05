@@ -4,7 +4,7 @@ services:
     container_name: radio-storage
     restart: always
     ports:
-      - 8082:8082
+      - 8083:8083
     volumes:
       - ./config/prod.yaml:/storage/config/prod.yaml:ro
       - /$SOURCE_STORAGE:/storage/source:rw
